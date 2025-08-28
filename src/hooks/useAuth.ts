@@ -1,6 +1,7 @@
-import { useReducer, useCallback } from "react";
+import { useEffect, useReducer, useCallback } from "react";
 import { AppState, AppAction, User } from "@/types";
-import { ensureAuthConfig, verifyAdminPassword, verifyProfessor } from "@/lib/authStore";
+import { supabase } from "@/lib/supabase";
+import { getOrCreateMyProfile, getSessionUser } from "@/lib/profilesApi";
 
 const initialState: AppState = {
   isAuthenticated: false,
@@ -33,30 +34,39 @@ function reducer(state: AppState, action: AppAction): AppState {
 export function useAuth() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // Garante que a config inicial existe no localStorage (seed)
-  ensureAuthConfig();
+  // carrega sessão ao montar
+  useEffect(() => {
+    (async () => {
+      const u = await getSessionUser();
+      if (!u) return;
+      const profile = await getOrCreateMyProfile();
+      const user: User = { name: profile.display_name, type: profile.role };
+      dispatch({ type: "SET_CURRENT_USER", payload: user });
+      dispatch({ type: "SET_USER_TYPE", payload: profile.role });
+      dispatch({ type: "SET_AUTHENTICATED", payload: true });
+      dispatch({ type: "SET_ACTIVE_TAB", payload: profile.role === "admin" ? "dashboard" : "my-requests" });
+    })();
 
-  const handleLogin = useCallback((userType: "admin"|"professor", username: string, password: string) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (evt) => {
+      if (evt === "SIGNED_OUT") {
+        dispatch({ type: "RESET_STATE" });
+      }
+    });
+    return () => { sub.subscription.unsubscribe(); };
+  }, []);
+
+  const handleLogin = useCallback(async (_ignoredType: "admin"|"professor", email: string, password: string) => {
     dispatch({ type: "SET_LOADING", payload: true });
     dispatch({ type: "SET_ERROR", payload: "" });
     try {
-      if (userType === "admin") {
-        const ok = verifyAdminPassword(password);
-        if (!ok) throw new Error("Senha do admin inválida.");
-        const user: User = { name: "Administrador", type: "admin" };
-        dispatch({ type: "SET_CURRENT_USER", payload: user });
-        dispatch({ type: "SET_USER_TYPE", payload: "admin" });
-        dispatch({ type: "SET_AUTHENTICATED", payload: true });
-        dispatch({ type: "SET_ACTIVE_TAB", payload: "dashboard" });
-      } else {
-        const prof = verifyProfessor(username, password);
-        if (!prof) throw new Error("Usuário ou senha de professor inválidos.");
-        const user: User = { name: prof.username, type: "professor" };
-        dispatch({ type: "SET_CURRENT_USER", payload: user });
-        dispatch({ type: "SET_USER_TYPE", payload: "professor" });
-        dispatch({ type: "SET_AUTHENTICATED", payload: true });
-        dispatch({ type: "SET_ACTIVE_TAB", payload: "my-requests" });
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      const profile = await getOrCreateMyProfile();
+      const user: User = { name: profile.display_name, type: profile.role };
+      dispatch({ type: "SET_CURRENT_USER", payload: user });
+      dispatch({ type: "SET_USER_TYPE", payload: profile.role });
+      dispatch({ type: "SET_AUTHENTICATED", payload: true });
+      dispatch({ type: "SET_ACTIVE_TAB", payload: profile.role === "admin" ? "dashboard" : "my-requests" });
     } catch (e: any) {
       dispatch({ type: "SET_ERROR", payload: e.message || "Falha no login" });
     } finally {
@@ -64,7 +74,8 @@ export function useAuth() {
     }
   }, []);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut();
     dispatch({ type: "RESET_STATE" });
   }, []);
 
@@ -72,17 +83,9 @@ export function useAuth() {
     dispatch({ type: "SET_MODAL_TYPE", payload: type });
     dispatch({ type: "SET_SHOW_MODAL", payload: true });
   }, []);
-
   const closeModal = useCallback(() => {
     dispatch({ type: "SET_SHOW_MODAL", payload: false });
   }, []);
 
-  return {
-    state,
-    dispatch,
-    handleLogin,
-    handleLogout,
-    openModal,
-    closeModal
-  };
+  return { state, dispatch, handleLogin, handleLogout, openModal, closeModal };
 }

@@ -1,184 +1,474 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ===== Reset + base */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  color: var(--ss-fg);
+  background: var(--ss-bg);
+}
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* ===== Tema (CLARO padrão) */
+:root{
+  --ss-brand: #0b5bd3;
+  --ss-brand-600: #0849a9;
+
+  --ss-ok: #15803d;
+  --ss-warn: #b45309;
+  --ss-danger: #b91c1c;
+
+  --ss-fg: #1f2937;
+  --ss-fg-soft: #4b5563;
+  --ss-bg: #f7f9fc;
+  --ss-card: #ffffff;
+  --ss-border: #e5e7eb;
+  --ss-border-strong: #d1d5db;
+
+  --ss-radius: 12px;
+  --ss-shadow: 0 6px 18px rgba(15, 23, 42, .06);
+
+  /* Navbar / Logo BG */
+  --nav-h: 84px;
+  --brand-clickable-width: 82px;
+  --logo-bg-size: 220px;
+  --logo-bg-opacity: 1;
+
+  /* Inventário */
+  --inv-surface: var(--ss-card);
+  --inv-ring: rgba(0,0,0,.12);
+  --inv-bar-h: 56px; /* altura fixa da barra de busca do inventário */
+}
+
+/* ===== Tema ESCURO (apenas quando data-theme="dark") */
+:root[data-theme="dark"]{
+  --ss-fg: #e5e7eb;
+  --ss-fg-soft: #9ca3af;
+  --ss-bg: #0b1220;
+  --ss-card: #0f172a;
+  --ss-border: #1f2937;
+  --ss-border-strong: #334155;
+  --ss-shadow: 0 8px 28px rgba(0,0,0,.35);
+
+  --inv-surface: var(--ss-card);
+  --inv-ring: rgba(255,255,255,.12);
+}
+
+/* ===== Utilitários */
+.ss-strong { font-weight: 700; }
+.ss-meta   { color: var(--ss-fg-soft); font-size: .95rem; }
+.spacer    { flex: 1 1 auto; }
+
+/* ===== Estrutura geral */
+.ss-page{
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+.ss-header{
+  display: flex; gap: 12px; align-items: center; justify-content: space-between;
+  margin: 10px 0 16px;
+}
+.ss-title{
+  margin: 0;
+  font-size: clamp(1.6rem, 2vw, 2.2rem);
+  letter-spacing: -.02em;
+}
+
+/* ===== Navbar (logo como background que NÃO empurra o layout) */
+.ss-nav{
+  position: sticky; top: 0; z-index: 1000;
+  min-height: var(--nav-h);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ss-border);
+  background: var(--ss-card);
+  box-shadow: var(--ss-shadow);
+}
+.ss-nav--grid{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+}
+.brand-left{
+  position: relative;
+  width: var(--brand-clickable-width);
+  height: var(--nav-h);
+}
+.brand-left::before{
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--logo-bg-size);
+  height: var(--logo-bg-size);
+  background: url('/logo-sesi.png') center / contain no-repeat;
+  opacity: var(--logo-bg-opacity);
+  pointer-events: none;
+  z-index: 0;
+}
+.brand-click{ display:block; width:100%; height:100%; }
+
+.center-links{
+  display:flex; justify-content:center; align-items:center; gap:8px;
+  min-width:0; overflow:hidden;
+}
+.right-actions{ display:flex; align-items:center; justify-content:flex-end; gap:8px; }
+
+/* ===== Pills navbar */
+.ss-pill{
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ss-border-strong);
+  background: var(--ss-card);
+  text-decoration: none; font-weight: 800; color: var(--ss-fg);
+  white-space: nowrap;
+}
+.ss-pill[aria-current="page"]{
+  background: var(--ss-brand);
+  color: #fff;
+  border-color: var(--ss-brand);
+}
+
+/* ===== Cards */
+.ss-card{
+  background: var(--ss-card);
+  border: 1px solid var(--ss-border);
+  border-radius: var(--ss-radius);
+  padding: 16px;
+  box-shadow: var(--ss-shadow);
+
+  /* evita qualquer coisa "sair" do cartão */
+  overflow: hidden;
+}
+
+/* ===== Form & inputs */
+.ss-row{ display:flex; align-items:center; gap:8px; }
+
+.ss-input, .ss-select, .ss-textarea{
+  appearance: none; width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ss-border);
+  border-radius: 10px;
+  background: var(--ss-card);
+  color: var(--ss-fg);
+  outline: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+.ss-textarea{ min-height: 100px; resize: vertical; }
+.ss-input::placeholder, .ss-textarea::placeholder {
+  color: color-mix(in srgb, var(--ss-fg) 55%, transparent);
+}
+.ss-input:focus, .ss-select:focus, .ss-textarea:focus{
+  border-color: var(--ss-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ss-brand) 18%, transparent);
+}
+
+/* Toolbar genérica – desligada (você quer busca só no inventário) */
+.ss-toolbar { display: none !important; }
+
+/* ===== Inventário: barra de busca FIXA (não "desce" nunca) */
+.inv-page .inv-fixed{
+  position: fixed;
+  top: calc(var(--nav-h) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1120px, 100vw - 24px);
+  z-index: 900;
+}
+.inv-page .inv-spacer{
+  height: calc(var(--inv-bar-h) + 18px); /* espaço para o conteúdo não saltar */
+}
+.inv-page .inv-searchbar{
+  height: var(--inv-bar-h);
+  display:flex; align-items:center;
+  background: var(--inv-surface);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  border: 1px solid var(--inv-ring);
+}
+.inv-page .inv-searchbar .ss-input{ width: 100%; }
+
+/* ===== Grid */
+.ss-grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  margin-top: 6px;
+}
+
+/* ===== Botões */
+.ss-btn{
+  --btn-bg: var(--ss-card);
+  --btn-fg: var(--ss-fg);
+  --btn-bd: var(--ss-border-strong);
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  padding: 10px 14px; border-radius: 10px; border:1px solid var(--btn-bd);
+  background: var(--btn-bg); color: var(--ss-fg);
+  font-weight: 700; text-decoration: none; cursor: pointer;
+  transition: filter .12s, background .12s, border-color .12s;
+}
+.ss-btn--primary{
+  --btn-bg: var(--ss-brand);
+  --btn-fg: #fff;
+  --btn-bd: var(--ss-brand);
+}
+.ss-btn--ghost{
+  --btn-bg: var(--ss-card);
+  --btn-fg: var(--ss-brand);
+  --btn-bd: color-mix(in srgb, var(--ss-brand) 45%, #fff);
+}
+.ss-btn--subtle{
+  --btn-bg: var(--ss-card);
+  --btn-fg: var(--ss-fg);
+  --btn-bd: var(--ss-border-strong);
+}
+
+/* ===== Badges */
+.ss-badge{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 12px; border-radius: 999px; font-weight: 700;
+  border:1px solid var(--ss-border-strong);
+}
+.ss-badge>i{ width:8px; height:8px; border-radius: 999px; background: var(--ss-fg-soft); }
+.ss-badge--ok    { background: #ecfdf5; border-color:#bbf7d0; color:#065f46; }
+.ss-badge--ok>i  { background:#16a34a; }
+.ss-badge--warn  { background: #fffbeb; border-color:#fde68a; color:#92400e; }
+.ss-badge--warn>i{ background:#f59e0b; }
+.ss-badge--danger{ background: #fef2f2; border-color:#fecaca; color:#7f1d1d; }
+.ss-badge--danger>i{ background:#ef4444; }
+
+/* ===== Admin • Pedidos: cabeçalho do cartão com chip SEM transbordar  */
+.order-head{
+  display:flex; align-items:center; gap:8px;
+  margin-bottom: 8px;
+}
+.order-head .status-chip{
+  margin-left: auto;             /* empurra o chip pra direita */
+  position: static !important;   /* garante que não fique absolute */
+  white-space: nowrap;
+}
+
+/* ===== Segmented (se usar) */
+.ss-seg{
+  display: inline-grid; grid-template-columns: 1fr 1fr 1fr;
+  border: 1px solid var(--ss-border-strong); border-radius: 10px; overflow: hidden;
+  background: var(--ss-card);
+}
+.ss-seg input{ display:none; }
+.ss-seg label{ padding:8px 10px; text-align:center; cursor:pointer; font-weight:700; color:var(--ss-fg-soft); }
+.ss-seg label + input + label{ border-left:1px solid var(--ss-border-strong); }
+.ss-seg input:checked + label{ background: var(--ss-brand); color:#fff; }
+
+/* ===== Responsivo */
+@media (max-width: 900px){
+  .center-links{ justify-content:flex-start; overflow-x:auto; padding-bottom:6px; }
+  .center-links::-webkit-scrollbar { height:6px; }
+  .center-links::-webkit-scrollbar-thumb{
+    background: color-mix(in srgb, var(--ss-fg) 30%, transparent);
+    border-radius:999px;
+  }
+}
+@media (max-width: 520px){
+  :root{ --brand-clickable-width: 64px; }
+}
+/* --- CORREÇÃO LAYOUT: chip de status nos cards de pedidos --- */
+/* Mantém o conteúdo do card aparado e permite posicionamento absoluto */
+.ss-card {
+  position: relative;
+  overflow: hidden; /* evita que qualquer coisa “pule” para fora */
+}
+
+/* Nos cards de pedidos, o chip costuma ser um .ss-badge direto no card.
+   Posicionamos esse .ss-badge no topo direito, dentro do card. */
+.ss-card > .ss-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+  white-space: nowrap; /* não quebrar */
+  z-index: 1;          /* por cima do conteúdo do card */
+  transform: translateZ(0); /* evita artefatos em alguns browsers */
+}
+
+/* Se preferir um seletor ainda mais “seguro” (escopo menor),
+   adicione a classe .status-chip no chip de pedidos e use só isso: */
+/*
+.ss-card .status-chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+  white-space: nowrap;
+  z-index: 1;
+}
 */
 
-@layer base {
-  :root {
-    /* Base colors */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    /* Card colors */
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    /* Popover colors */
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    /* Primary brand colors - Modern blue gradient */
-    --primary: 220 91% 58%;
-    --primary-foreground: 0 0% 98%;
-    --primary-glow: 220 91% 68%;
-
-    /* Secondary colors */
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    /* Muted colors */
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    /* Accent colors */
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    /* Status colors */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    /* Interactive elements */
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 220 91% 58%;
-
-    /* Layout */
-    --radius: 0.75rem;
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-background: linear-gradient(135deg, hsl(220 15% 98%), hsl(210 25% 97%), hsl(200 30% 96%));
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 25% 99%));
-
-    /* Shadows */
-    --shadow-elegant: 0 10px 40px -10px hsl(var(--primary) / 0.1);
-    --shadow-glow: 0 0 30px hsl(var(--primary-glow) / 0.3);
-    --shadow-card: 0 4px 20px -2px hsl(222.2 84% 4.9% / 0.08);
-
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --animation-bounce: bounce 1s ease-in-out;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+/* Em telas estreitas, se quiser reduzir um pouco o chip */
+@media (max-width: 520px) {
+  .ss-card > .ss-badge { top: 8px; right: 8px; font-size: .92rem; }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
+/* Se seus botões de status (Pendente/Aceito/Rejeitado) estiverem muito longos,
+   deixamos o grupo aceitar quebra em duas linhas sem estourar o card */
+.ss-card .ss-seg,
+.ss-card .ss-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* =========================
+   Admin • Pedidos – ajustes visuais
+   (somente CSS; não toca no Inventário)
+   ========================= */
 
-  body {
-    @apply bg-background text-foreground;
-  }
+/* 1) O chip de status (ex.: "Pendente", "Aceito") vai preso no topo-direito do card */
+.ss-card {
+  position: relative;
+  overflow: hidden; /* impede que algo "vaze" do card */
 }
 
-@layer utilities {
-  /* Background gradients */
-  .bg-gradient-primary {
-    background: var(--gradient-primary);
-  }
-  
-  .bg-gradient-background {
-    background: var(--gradient-background);
-  }
-  
-  .bg-gradient-card {
-    background: var(--gradient-card);
-  }
+.ss-card > .ss-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+  white-space: nowrap;
+  z-index: 2;
+  transform: translateZ(0);
+}
 
-  /* Shadows */
-  .shadow-elegant {
-    box-shadow: var(--shadow-elegant);
-  }
-  
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-  
-  .shadow-card {
-    box-shadow: var(--shadow-card);
-  }
+/* dá um respiro para o título quando existe um chip no card */
+.ss-card > .ss-badge ~ .ss-strong {
+  padding-right: 128px;
+}
 
-  /* Transitions */
-  .transition-smooth {
-    transition: var(--transition-smooth);
-  }
+@media (max-width: 560px) {
+  .ss-card > .ss-badge { top: 10px; right: 10px; }
+  .ss-card > .ss-badge ~ .ss-strong { padding-right: 96px; }
+}
 
-  /* Status colors */
-  .text-success {
-    color: hsl(var(--success));
-  }
-  
-  .text-warning {
-    color: hsl(var(--warning));
-  }
-  
-  .bg-success {
-    background-color: hsl(var(--success));
-  }
-  
-  .bg-warning {
-    background-color: hsl(var(--warning));
-  }
+/* 2) Grupo de status (Pendente/Aceito/Rejeitado) — vira segmented control horizontal */
+
+/* Se o seu grupo for .ss-seg ou .ss-tabs, normalizamos os dois */
+.ss-card .ss-seg,
+.ss-card .ss-tabs {
+  display: inline-flex;          /* horizontal */
+  align-items: center;
+  gap: 8px;                      /* espaço entre botões */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-top: 8px;
+}
+
+/* Estilo de cada “pílula” */
+.ss-card .ss-seg > *,
+.ss-card .ss-tabs > * {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #d9dee7);
+  background: var(--surface, #fff);
+  color: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Estado ativo/selecionado (cobre várias formas de “ativo”) */
+.ss-card .ss-seg > *.active,
+.ss-card .ss-tabs > *.active,
+.ss-card .ss-seg > *[aria-pressed="true"],
+.ss-card .ss-tabs > *[aria-pressed="true"],
+.ss-card .ss-seg > *[data-active="true"],
+.ss-card .ss-tabs > *[data-active="true"],
+.ss-card .ss-seg > *[aria-current="true"],
+.ss-card .ss-tabs > *[aria-current="true"] {
+  background: var(--brand-600, #1e66f5);
+  color: #fff;
+  border-color: var(--brand-600, #1e66f5);
+}
+
+/* Em telas estreitas, pode quebrar para duas linhas sem “caixa” grande */
+@media (max-width: 560px) {
+  .ss-card .ss-seg, .ss-card .ss-tabs { flex-wrap: wrap; }
+}
+
+/* 3) Detalhe opcional: deixa as sombras/bordas internas de qualquer “mini-card”
+      usados por engano no grupo invisíveis (sem afetar Inventário) */
+.ss-card .ss-seg, .ss-card .ss-tabs, .ss-card .ss-seg *:where(.is-panel) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+/* =========================
+   Admin • Pedidos — segmented de status (CSS puro)
+   ========================= */
+
+/* 1) Chip (já tínhamos): preso no topo-direito e com respiro no título */
+.ss-card { position: relative; overflow: hidden; }
+.ss-card > .ss-badge {
+  position: absolute; top: 12px; right: 12px;
+  margin: 0; white-space: nowrap; z-index: 2;
+}
+.ss-card > .ss-badge ~ .ss-strong { padding-right: 128px; }
+@media (max-width: 560px){
+  .ss-card > .ss-badge { top: 10px; right: 10px; }
+  .ss-card > .ss-badge ~ .ss-strong { padding-right: 96px; }
+}
+
+/* 2) Radios de status: escondemos o “pontinho” e usamos o label como pílula  */
+.ss-card input[type="radio"]{
+  position: absolute;   /* tira do fluxo sem quebrar acessibilidade */
+  opacity: 0;           /* esconde o pontinho */
+  width: 0; height: 0;  /* sem ocupar espaço */
+}
+
+/* 3) O label logo APÓS o radio vira a pílula */
+.ss-card input[type="radio"] + label{
+  display: inline-flex;               /* fica em linha (horizontal) */
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 14px;
+  margin-right: 8px;                  /* espaço entre pílulas */
+  margin-top: 6px;                    /* afastinho do texto de cima */
+  border-radius: 10px;
+  border: 1px solid var(--border, #d9dee7);
+  background: var(--surface, #fff);
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+/* 4) Estado selecionado (radio marcado) */
+.ss-card input[type="radio"]:checked + label{
+  background: var(--brand-600, #1e66f5);
+  color: #fff;
+  border-color: var(--brand-600, #1e66f5);
+}
+
+/* 5) Melhor foco para teclado */
+.ss-card input[type="radio"]:focus + label{
+  outline: 2px solid color-mix(in srgb, var(--brand-600, #1e66f5) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* 6) Se houver um contêiner envolvendo os radios (quando existir), deixamos em linha */
+.ss-card .status-group,
+.ss-card .ss-radio-group{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }

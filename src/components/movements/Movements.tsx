@@ -1,47 +1,91 @@
-import { useState } from "react";
-import { requestsMock } from "@/lib/mockData";
-import { Request } from "@/types";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useRef, useState } from "react";
+import { listMovements, MovementRow } from "@/lib/inventoryApi";
+import { subscribeTable } from "@/lib/realtime";
+import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export default function Requests() {
-  const [requests, setRequests] = useState<Request[]>(requestsMock);
+function debounce<T extends (...args:any[]) => void>(fn: T, ms = 200) {
+  let t: number | undefined;
+  return (...args: Parameters<T>) => {
+    if (t) window.clearTimeout(t);
+    t = window.setTimeout(() => fn(...args), ms);
+  };
+}
 
-  function setStatus(id: string, status: Request["status"]) {
-    setRequests(rs => rs.map(r => r.id === id ? { ...r, status } : r));
+export default function Movements() {
+  const [movs, setMovs] = useState<MovementRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  async function load() {
+    setLoading(true);
+    try {
+      const data = await listMovements();
+      setMovs(data);
+    } finally {
+      setLoading(false);
+    }
   }
+  const loadDebounced = useRef(debounce(load, 250)).current;
+
+  useEffect(() => {
+    load();
+    const unsub = subscribeTable("movements", (p) => {
+      loadDebounced();
+      if (p.eventType === "INSERT") {
+        toast({
+          title: p.new?.type === "in" ? "Entrada registrada" : "Saída registrada",
+          description: `${p.new?.amount}x ${p.new?.item_name} • por ${p.new?.user_name}`,
+        });
+      }
+    });
+    return () => unsub();
+  }, [loadDebounced, toast]);
 
   return (
-    <div className="grid gap-4">
-      {requests.map(r => (
-        <Card key={r.id}>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Pedido #{r.id}</CardTitle>
-              <CardDescription>De: <code>{r.requester}</code> — {new Date(r.createdAt).toLocaleString()}</CardDescription>
-            </div>
-            <Badge variant={
-              r.status === "pending" ? "secondary" :
-              r.status === "approved" ? "default" : "destructive"
-            }>{r.status}</Badge>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-6 space-y-1">
-              {r.items.map(it => (
-                <li key={it.id}><b>{it.itemName}</b> — {it.amount} un.</li>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Movimentações recentes{" "}
+            {loading && <span className="text-xs text-muted-foreground">(carregando...)</span>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Qtd</TableHead>
+                <TableHead>Usuário</TableHead>
+                <TableHead>Nota</TableHead>
+                <TableHead>Data</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {movs.map((m) => (
+                <TableRow key={m.id}>
+                  <TableCell>{m.item_name}</TableCell>
+                  <TableCell>{m.type === "in" ? "Entrada" : "Saída"}</TableCell>
+                  <TableCell>{m.amount}</TableCell>
+                  <TableCell>{m.user_name}</TableCell>
+                  <TableCell>{m.note || "-"}</TableCell>
+                  <TableCell>{new Date(m.created_at).toLocaleString()}</TableCell>
+                </TableRow>
               ))}
-            </ul>
-            {r.note && <p className="mt-3 text-sm text-muted-foreground">{r.note}</p>}
-
-            <div className="mt-4 flex gap-2">
-              <Button variant="outline" onClick={()=>setStatus(r.id, "approved")}>Aprovar</Button>
-              <Button variant="outline" onClick={()=>setStatus(r.id, "denied")}>Negar</Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-      {requests.length === 0 && <p className="text-sm text-muted-foreground">Sem pedidos.</p>}
+              {movs.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    Nenhuma movimentação encontrada.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,29 +1,34 @@
-import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { LoginForm } from '@/components/auth/LoginForm';
-import { Header } from '@/components/layout/Header';
-import { Navigation } from '@/components/layout/Navigation';
-import { Dashboard } from '@/components/dashboard/Dashboard';
-import { stats, movements, requests } from '@/data/mockData';
+// src/components/SchoolStashSystem.tsx
+import React from "react";
 
-// Abas administrativas
-import InventoryManager from '@/components/inventory/InventoryManager';
-import Requests from '@/components/requests/Requests';
-import Movements from '@/components/movements/Movements';
-import RegisterItem from '@/components/register/RegisterItem';
-import SecuritySettings from '@/components/settings/SecuritySettings';
+import { useAuth } from "@/hooks/useAuth";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { Header } from "@/components/layout/Header";
+import { Navigation } from "@/components/layout/Navigation";
+import { Dashboard } from "@/components/dashboard/Dashboard";
+
+// KPIs (Supabase)
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardRealtime } from "@/hooks/useDashboardRealtime";
+
+// Páginas (admin)
+import { InventoryPage } from "@/components/inventory/InventoryPage";
+import { RequestsPage } from "@/components/requests/RequestsPage";
+import { MovementsPage } from "@/components/movements/MovementsPage";
 
 export function SchoolStashSystem() {
   const { state, dispatch, handleLogin, handleLogout, openModal } = useAuth();
 
-  const getCurrentProfessorRequests = () => {
-    if (!state.currentUser || state.userType !== 'professor') return [];
-    // ajuste para seu mock atual: se o seu objeto de pedido usa "requester" ao invés de "professor", troque abaixo
-    return requests.filter((r: any) => r.professor === state.currentUser.name || r.requester === state.currentUser.name);
-  };
+  // KPIs do Supabase (sem mocks)
+  const { data: statsData, isLoading: statsLoading } = useDashboardStats();
+
+  // Realtime: invalida KPIs quando tabelas mudarem
+  useDashboardRealtime();
 
   if (!state.isAuthenticated) {
-    return <LoginForm state={state} handleLogin={handleLogin} dispatch={dispatch} />;
+    return (
+      <LoginForm state={state} handleLogin={handleLogin} dispatch={dispatch} />
+    );
   }
 
   return (
@@ -32,13 +37,22 @@ export function SchoolStashSystem() {
       <Navigation state={state} dispatch={dispatch} />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {state.userType === 'admin' ? (
-          <AdminPanel activeTab={state.activeTab} />
+        {state.userType === "admin" ? (
+          <AdminPanel
+            activeTab={state.activeTab}
+            isLoading={statsLoading}
+            statsData={{
+              totalItems: statsData?.totalItems ?? 0,
+              pendingRequests: statsData?.pendingRequests ?? 0,
+              todayMovements: statsData?.todayMovements ?? 0,
+              professors: statsData?.professors ?? 0,
+            }}
+          />
         ) : (
           <ProfessorPanel
             activeTab={state.activeTab}
             currentUser={state.currentUser}
-            requests={getCurrentProfessorRequests()}
+            openModal={openModal}
           />
         )}
       </main>
@@ -46,69 +60,122 @@ export function SchoolStashSystem() {
   );
 }
 
+/* =============== Admin =============== */
+
 interface AdminPanelProps {
   activeTab: string;
+  isLoading: boolean;
+  statsData: {
+    totalItems: number;
+    pendingRequests: number;
+    todayMovements: number;
+    professors: number;
+  };
 }
 
-function AdminPanel({ activeTab }: AdminPanelProps) {
+function AdminPanel({ activeTab, isLoading, statsData }: AdminPanelProps) {
   switch (activeTab) {
-    case 'dashboard':
-      return <Dashboard stats={stats} recentItems={movements} />;
-    case 'inventory':
-      return <InventoryManager />;
-    case 'requests':
-      return <Requests />;
-    case 'movements':
-      return <Movements />;
-    case 'register':
-      return <RegisterItem />;
-    case 'settings':
-      return <SecuritySettings />;   // <- Configurações (Admin)
+    case "dashboard":
+      return <Dashboard stats={statsData} loading={isLoading} />;
+
+    case "inventory":
+      return <InventoryPage />;
+
+    case "requests":
+      return <RequestsPage />;
+
+    case "movements":
+      return <MovementsPage />;
+
+    case "settings":
+      return (
+        <Placeholder title="Configurações">
+          Definições do sistema, papéis de usuário e preferências.
+        </Placeholder>
+      );
+
     default:
-      return <Dashboard stats={stats} recentItems={movements} />;
+      return <Dashboard stats={statsData} loading={isLoading} />;
   }
 }
+
+/* =============== Professor =============== */
 
 interface ProfessorPanelProps {
   activeTab: string;
   currentUser: any;
-  requests: any[];
+  openModal: (type: string) => void;
 }
 
-function ProfessorPanel({ activeTab, currentUser, requests }: ProfessorPanelProps) {
+function ProfessorPanel({
+  activeTab,
+  currentUser,
+  openModal,
+}: ProfessorPanelProps) {
   switch (activeTab) {
-    case 'my-requests':
+    case "dashboard":
+      return (
+        <Placeholder title={`Bem-vindo(a), ${currentUser?.name ?? "Professor(a)"}`}>
+          Selecione uma ação no topo para começar.
+        </Placeholder>
+      );
+
+    case "my-requests":
+      return (
+        <Placeholder title="Meus Pedidos">
+          Em breve listaremos seus pedidos com status em tempo real.
+        </Placeholder>
+      );
+
+    case "make-request":
       return (
         <div className="text-center py-20">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Meus Pedidos</h2>
-          <p className="text-muted-foreground mb-8">
-            Você tem {requests.length} pedidos registrados no sistema.
+          <h2 className="text-2xl font-bold text-foreground mb-4">
+            Solicitar Material
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Abra um novo pedido de material para o almoxarifado.
           </p>
-          {requests.length === 0 ? (
-            <p className="text-muted-foreground">Nenhum pedido encontrado.</p>
-          ) : (
-            <div className="text-left">
-              {/* TODO: lista real de pedidos do professor */}
-              <p className="text-muted-foreground">Lista de pedidos em desenvolvimento...</p>
-            </div>
-          )}
+          <button
+            onClick={() => openModal("new-request")}
+            className="rounded-lg bg-primary px-5 py-2.5 text-white hover:opacity-90"
+          >
+            Novo Pedido
+          </button>
         </div>
       );
-    case 'make-request':
+
+    case "movements":
       return (
-        <div className="text-center py-20">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Fazer Novo Pedido</h2>
-          <p className="text-muted-foreground">Formulário de pedido em desenvolvimento...</p>
-        </div>
+        <Placeholder title="Minhas Movimentações">
+          Em breve você verá as movimentações relacionadas aos seus pedidos.
+        </Placeholder>
       );
+
     default:
       return (
-        <div className="text-center py-20">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Área do Professor</h2>
-          <p className="text-muted-foreground">Selecione uma opção no menu.</p>
-        </div>
+        <Placeholder title={`Bem-vindo(a), ${currentUser?.name ?? "Professor(a)"}`}>
+          Selecione uma ação no topo para começar.
+        </Placeholder>
       );
   }
+}
+
+/* =============== UI utilitária =============== */
+
+function Placeholder({
+  title,
+  children,
+}: {
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+      <h2 className="mb-2 text-2xl font-bold text-foreground">{title}</h2>
+      <p className="text-muted-foreground">{children}</p>
+    </div>
+  );
 }
 
 export default SchoolStashSystem;
