@@ -32,9 +32,9 @@ body {
   --ss-shadow: 0 6px 18px rgba(15, 23, 42, .06);
 
   /* Navbar / Logo BG */
-  --nav-h: 84px;
+  --nav-h: 200px;
   --brand-clickable-width: 82px;
-  --logo-bg-size: 220px;
+  --logo-bg-size: 400px;
   --logo-bg-opacity: 1;
 
   /* Inventário */
