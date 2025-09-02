@@ -3,15 +3,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
 // Páginas
-import OrdersPublic from "./pages/OrdersPublic";     // formulário público (criar pedido)
-import PublicOrders from "./pages/PublicOrders";     // lista pública (somente leitura)
+import OrdersPublic from "./pages/OrdersPublic";
+import PublicOrders from "./pages/PublicOrders";
 import AdminOrders from "./pages/AdminOrders";
 import AdminAdmins from "./pages/AdminAdmins";
 import AdminInventory from "./pages/AdminInventory";
-import AdminManage from "./pages/AdminManage"; // (se não usar, pode remover)
+import AdminManage from "./pages/AdminManage";
+import Login from "./pages/Login";
 
 // -------------------------
-// Hooks locais (leve e auto contido)
+// Hooks locais
 // -------------------------
 function useSession() {
   const [session, setSession] = useState<import("@supabase/supabase-js").Session | null>(null);
@@ -29,9 +30,7 @@ function useSession() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const signOut = async () => { await supabase.auth.signOut(); };
 
   return { session, loading, signOut };
 }
@@ -44,15 +43,10 @@ function useIsAdmin() {
   useEffect(() => {
     let mounted = true;
     if (loadingSession) return;
-    if (!session) {
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
+    if (!session) { setIsAdmin(false); setLoading(false); return; }
 
     setLoading(true);
-    supabase
-      .rpc("is_current_user_admin")
+    supabase.rpc("is_current_user_admin")
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) {
@@ -63,10 +57,7 @@ function useIsAdmin() {
         }
       })
       .finally(() => mounted && setLoading(false));
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [loadingSession, session?.user?.id]);
 
   return { isAdmin, loading };
@@ -88,7 +79,7 @@ function useTheme() {
 }
 
 // -------------------------
-// Nav com detecção de admin (esconde links se não for admin)
+// Nav
 // -------------------------
 function Nav() {
   const { theme, toggle } = useTheme();
@@ -98,17 +89,14 @@ function Nav() {
 
   return (
     <nav className="ss-nav ss-nav--grid">
-      {/* ESQUERDA – logo */}
       <div className="brand-left">
         <Link to="/" className="brand-click" aria-label="Início" />
       </div>
 
-      {/* CENTRO – pílulas */}
       <div className="center-links">
         <NavLink to="/" className="ss-pill">Fazer Pedido</NavLink>
         <NavLink to="/public" className="ss-pill">Pedidos (lista pública)</NavLink>
 
-        {/* Enquanto carrega permissões, não mostra os links de admin */}
         {!loading && isAdmin && (
           <>
             <NavLink to="/admin" className="ss-pill">Admin • Pedidos</NavLink>
@@ -118,45 +106,34 @@ function Nav() {
         )}
       </div>
 
-      {/* DIREITA – ações */}
       <div className="right-actions" style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button className="ss-btn ss-btn--subtle" onClick={toggle} title="Alternar tema">
           {label}
         </button>
 
-        {/* Sessão: mostra e-mail logado e sair */}
         {session ? (
           <>
             <span className="ss-badge">{session.user.email}</span>
             <button className="ss-btn" onClick={signOut}>Sair</button>
           </>
-        ) : null}
+        ) : (
+          <Link to="/login" className="ss-btn">Entrar</Link>
+        )}
       </div>
     </nav>
   );
 }
 
 // -------------------------
-// Guards de rota
+// Guards
 // -------------------------
-function RequireAuth({ children }: { children: JSX.Element }) {
-  const { session, loading } = useSession();
-  const location = useLocation();
-
-  if (loading) return <p style={{ padding: 24 }}>Carregando sessão…</p>;
-  if (!session) {
-    return <Navigate to="/" replace state={{ from: location }} />;
-  }
-  return children;
-}
-
 function RequireAdmin({ children }: { children: JSX.Element }) {
   const { session, loading: loadingSession } = useSession();
   const { isAdmin, loading } = useIsAdmin();
   const location = useLocation();
 
   if (loadingSession || loading) return <p style={{ padding: 24 }}>Verificando permissões…</p>;
-  if (!session) return <Navigate to="/" replace state={{ from: location }} />;
+  if (!session) return <Navigate to="/login" replace state={{ from: location }} />;
   if (!isAdmin) return <Navigate to="/" replace state={{ from: location, reason: "not_admin" }} />;
   return children;
 }
@@ -170,8 +147,9 @@ export default function App() {
       <Nav />
       <Routes>
         {/* Público */}
-        <Route path="/" element={<OrdersPublic />} />       {/* formulário de criação */}
-        <Route path="/public" element={<PublicOrders />} /> {/* lista pública */}
+        <Route path="/" element={<OrdersPublic />} />
+        <Route path="/public" element={<PublicOrders />} />
+        <Route path="/login" element={<Login />} />
 
         {/* Admin protegidas */}
         <Route
@@ -206,6 +184,7 @@ export default function App() {
             </RequireAdmin>
           }
         />
+
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

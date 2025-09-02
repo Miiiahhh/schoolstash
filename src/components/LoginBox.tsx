@@ -1,36 +1,28 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Props = {
-  onSuccess?: () => void;
-};
+type Props = { onSuccess?: () => void };
 
 export default function LoginBox({ onSuccess }: Props) {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password: pass,
-        });
+        const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
         onSuccess?.();
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password: pass,
-        });
+        const { error } = await supabase.auth.signUp({ email, password: pass });
         if (error) throw error;
-        alert("Cadastro criado! Se seu projeto exigir confirmação por e-mail, verifique sua caixa de entrada.");
+        alert("Cadastro criado! Se o projeto exigir confirmação por e-mail, verifique sua caixa de entrada.");
         setMode("signin");
       }
     } catch (err: any) {
@@ -38,13 +30,14 @@ export default function LoginBox({ onSuccess }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "grid", gap: 10, maxWidth: 360 }}>
       <h2>{mode === "signin" ? "Entrar" : "Cadastrar"}</h2>
 
       <input
+        className="ss-input"
         placeholder="email"
         type="email"
         value={email}
@@ -53,6 +46,7 @@ export default function LoginBox({ onSuccess }: Props) {
         autoComplete="email"
       />
       <input
+        className="ss-input"
         placeholder="senha"
         type="password"
         value={pass}
@@ -61,9 +55,9 @@ export default function LoginBox({ onSuccess }: Props) {
         autoComplete={mode === "signin" ? "current-password" : "new-password"}
       />
 
-      {errorMsg && <div style={{ color: "crimson" }}>{errorMsg}</div>}
+      {errorMsg && <div className="ss-card ss-card--danger">{errorMsg}</div>}
 
-      <button type="submit" disabled={loading}>
+      <button className="ss-btn" type="submit" disabled={loading}>
         {loading ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
       </button>
 
