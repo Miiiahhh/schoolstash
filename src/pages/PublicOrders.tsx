@@ -1,158 +1,225 @@
-import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-type Status = 'pendente' | 'aceito' | 'rejeitado';
+type Status = "pendente" | "aceito" | "rejeitado";
 
-interface Order {
+type PublicOrder = {
   id: string;
   created_at: string;
-  requester_name: string;
-  item_name: string;
-  quantity: number;
-  notes: string | null;
   status: Status;
-  notify_email: string | null;
-  notify_phone: string | null;
-}
+  requester_name?: string | null;
+  item_name?: string | null;
+};
+
+const STATUS_PILLS: Array<{ key: "todos" | Status; label: string }> = [
+  { key: "todos", label: "Todos" },
+  { key: "pendente", label: "Pendentes" },
+  { key: "aceito", label: "Aceitos" },
+  { key: "rejeitado", label: "Rejeitados" },
+];
 
 export default function PublicOrders() {
-  // form
-  const [requesterName, setRequesterName] = useState('');
-  const [item, setItem] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState('');
-  const [notifyEmail, setNotifyEmail] = useState('');
-  const [notifyPhone, setNotifyPhone] = useState(''); // novo
-
-  // list
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'todos' | Status>('todos');
+  const [orders, setOrders] = useState<PublicOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"todos" | Status>("todos");
+  const [error, setError] = useState<string | null>(null);
 
-  async function sendOrder() {
-    const { error } = await supabase.from('orders').insert({
-      requester_name: requesterName.trim(),
-      item_name: item.trim(),
-      quantity: Number(quantity) || 1,
-      notes: notes.trim() || null,
-      status: 'pendente',
-      notify_email: notifyEmail.trim() || null,
-      notify_phone: notifyPhone.trim() || null,
-    });
-    if (error) {
-      alert('Erro ao enviar pedido. Tente novamente.');
-      return;
-    }
-    setRequesterName('');
-    setItem('');
-    setQuantity(1);
-    setNotes('');
-    setNotifyEmail('');
-    setNotifyPhone('');
-    await fetchOrders();
-  }
-
-  async function fetchOrders() {
-    setLoading(true);
-    let q = supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (filter !== 'todos') q = q.eq('status', filter);
-    const { data } = await q;
-    setOrders((data || []) as Order[]);
-    setLoading(false);
-  }
-
+  // carga inicial
   useEffect(() => {
-    fetchOrders();
-    const ch = supabase
-      .channel('public-orders-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders)
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+    let mounted = true;
 
-  const list = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return orders;
-    return orders.filter(o =>
-      o.item_name.toLowerCase().includes(q) ||
-      o.requester_name.toLowerCase().includes(q) ||
-      (o.notes || '').toLowerCase().includes(q)
-    );
-  }, [orders, search]);
+    async function load() {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from("orders") // se preferir, troque por uma VIEW pública: "orders_public"
+        .select("id, created_at, status, requester_name, item_name")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      if (!mounted) return;
+
+      if (error) {
+        console.error("Erro ao carregar pedidos públicos:", error);
+        setError(error.message ?? "Erro ao carregar pedidos.");
+        setOrders([]);
+      } else {
+        const normalized = (data ?? []).map((o: any) => ({
+          id: String(o.id),
+          created_at: o.created_at,
+          status: o.status as Status,
+          requester_name: o.requester_name ?? null,
+          item_name: o.item_name ?? null,
+        })) as PublicOrder[];
+        setOrders(normalized);
+      }
+      setLoading(false);
+    }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // realtime
+  useEffect(() => {
+    const channel = supabase
+      .channel("public:orders")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        (payload) => {
+          setOrders((prev) => {
+            const next = [...prev]; // <— fix do typo
+            const row = payload.new as any;
+            const oldRow = payload.old as any;
+
+            if (payload.eventType === "INSERT") {
+              next.unshift({
+                id: String(row.id),
+                created_at: row.created_at,
+                status: row.status as Status,
+                requester_name: row.requester_name ?? null,
+                item_name: row.item_name ?? null,
+              });
+              return dedupe(next);
+            }
+
+            if (payload.eventType === "UPDATE") {
+              const idx = next.findIndex((o) => o.id === String(row.id));
+              if (idx >= 0) {
+                next[idx] = {
+                  id: String(row.id),
+                  created_at: row.created_at,
+                  status: row.status as Status,
+                  requester_name: row.requester_name ?? null,
+                  item_name: row.item_name ?? null,
+                };
+              }
+              return next;
+            }
+
+            if (payload.eventType === "DELETE") {
+              return next.filter((o) => o.id !== String(oldRow?.id));
+            }
+
+            return next;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return orders
+      .filter((o) => (filter === "todos" ? true : o.status === filter))
+      .filter((o) => {
+        if (!term) return true;
+        const hay = [
+          o.id,
+          o.requester_name ?? "",
+          o.item_name ?? "",
+          o.status ?? "",
+          new Date(o.created_at).toLocaleString(),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(term);
+      });
+  }, [orders, filter, search]);
 
   return (
-    <div className="container">
-      <header className="page-header">
-        <h1 className="title">Pedidos (acesso livre)</h1>
+    <div className="container" style={{ padding: 16, display: "grid", gap: 16 }}>
+      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h1 className="ss-title">Pedidos (público)</h1>
       </header>
 
-      <section className="section-narrow card" style={{ padding: 16 }}>
-        <div className="grid" style={{ gap: 12 }}>
-          <input className="input" placeholder="Seu nome"
-                 value={requesterName} onChange={e => setRequesterName(e.target.value)} />
-          <input className="input" placeholder="Item"
-                 value={item} onChange={e => setItem(e.target.value)} />
-          <div style={{ display: 'flex', gap: 12 }}>
-            <input className="input" type="number" min={1}
-                   placeholder="Quantidade" value={quantity}
-                   onChange={e => setQuantity(Number(e.target.value))} />
-            <input className="input" placeholder="Seu e-mail (para aviso de status) — opcional"
-                   value={notifyEmail} onChange={e => setNotifyEmail(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <input className="input" placeholder="Seu WhatsApp com DDD (apenas números) — opcional"
-                   value={notifyPhone} onChange={e => setNotifyPhone(e.target.value)} />
-            <input className="input" placeholder="Observações (opcional)"
-                   value={notes} onChange={e => setNotes(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={sendOrder}>Enviar pedido</button>
-            <button className="btn btn--subtle" onClick={() => {
-              setRequesterName(''); setItem(''); setQuantity(1);
-              setNotes(''); setNotifyEmail(''); setNotifyPhone('');
-            }}>Limpar</button>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-narrow toolbar" style={{ top: 60 }}>
-        <input className="input" placeholder="Buscar por nome, item ou observação…"
-               value={search} onChange={e => setSearch(e.target.value)} />
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select className="select" value={filter} onChange={e => setFilter(e.target.value as any)}>
-            <option value="todos">Mostrar: todos</option>
-            <option value="pendente">Pendentes</option>
-            <option value="aceito">Aceitos</option>
-            <option value="rejeitado">Rejeitados</option>
-          </select>
-          <small className="text-muted">Dica: procure seu nome para ver seus pedidos rapidamente.</small>
-        </div>
-      </section>
-
-      <section className="section-narrow">
-        {loading ? <p>Carregando…</p> :
-         list.length === 0 ? <p className="text-muted">Nenhum pedido encontrado.</p> :
-         <div className="grid" style={{ gap: 12 }}>
-          {list.map(o => (
-            <div key={o.id} className="card" style={{ padding: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <div className="font-semibold">{o.item_name} <span style={{ opacity: .7 }}>×{o.quantity}</span></div>
-                  <div className="text-sm" style={{ opacity: .85, marginTop: 4 }}>
-                    por <strong>{o.requester_name}</strong> • {new Date(o.created_at).toLocaleString()}
-                  </div>
-                  {!!o.notes && <div className="text-sm" style={{ marginTop: 6 }}>Obs.: {o.notes}</div>}
-                </div>
-                <span className="text-sm" style={{ padding: '6px 10px', borderRadius: 999, background: '#f1f5f9' }}>
-                  {o.status}
-                </span>
-              </div>
-            </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <div className="segmented">
+          {STATUS_PILLS.map((p) => (
+            <button
+              key={p.key}
+              className={`ss-pill ${filter === p.key ? "is-active" : ""}`}
+              onClick={() => setFilter(p.key)}
+            >
+              {p.label}
+            </button>
           ))}
-         </div>}
-      </section>
+        </div>
+
+        <div style={{ marginLeft: "auto" }} />
+        <input
+          className="ss-input"
+          placeholder="Buscar por ID, nome, item, status..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ minWidth: 260 }}
+        />
+      </div>
+
+      {loading && <div className="ss-card">Carregando pedidos…</div>}
+      {error && !loading && <div className="ss-card ss-card--danger">Erro: {error}</div>}
+
+      {!loading && !error && (
+        <div className="ss-list" style={{ display: "grid", gap: 8 }}>
+          {filtered.length === 0 ? (
+            <div className="ss-card">Nenhum pedido encontrado.</div>
+          ) : (
+            filtered.map((o) => <OrderRow key={o.id} o={o} />)
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function dedupe(arr: PublicOrder[]) {
+  const seen = new Set<string>();
+  const out: PublicOrder[] = [];
+  for (const it of arr) {
+    if (!seen.has(it.id)) {
+      seen.add(it.id);
+      out.push(it);
+    }
+  }
+  return out;
+}
+
+function statusBadge(s: Status) {
+  const map: Record<Status, string> = {
+    pendente: "ss-badge ss-badge--warn",
+    aceito: "ss-badge ss-badge--success",
+    rejeitado: "ss-badge ss-badge--danger",
+  };
+  return <span className={map[s] ?? "ss-badge"}>{s}</span>;
+}
+
+function OrderRow({ o }: { o: PublicOrder }) {
+  const created = new Date(o.created_at);
+  return (
+    <div className="ss-card" style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "grid" }}>
+        <strong className="ss-mono">#{o.id}</strong>
+        <span className="ss-dim">
+          {created.toLocaleDateString()} {created.toLocaleTimeString()}
+        </span>
+        {(o.requester_name || o.item_name) && (
+          <span className="ss-dim">
+            {o.requester_name ? `Solicitante: ${o.requester_name}` : ""}
+            {o.requester_name && o.item_name ? " • " : ""}
+            {o.item_name ? `Item: ${o.item_name}` : ""}
+          </span>
+        )}
+      </div>
+      {statusBadge(o.status)}
     </div>
   );
 }
