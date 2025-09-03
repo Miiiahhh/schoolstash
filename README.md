@@ -1,73 +1,44 @@
-# Welcome to your Lovable project
+# 🎒 School Stash — O depósito secreto da escola
 
-## Project info
+> Um projeto feito com 💙 por Kamila Oliveira, para organizar o caos do estoque escolar ✨  
 
-**URL**: https://lovable.dev/projects/178c9d00-257d-442c-a4fe-7bc9de681189
+![Badge React](https://img.shields.io/badge/React-⚛️-blue?style=for-the-badge) 
+![Badge Supabase](https://img.shields.io/badge/Supabase-🟢-brightgreen?style=for-the-badge) 
+![Badge Tailwind](https://img.shields.io/badge/TailwindCSS-🎨-blueviolet?style=for-the-badge) 
+![Badge License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🌟 O que é isso?
 
-**Use Lovable**
+O **School Stash** é um sistema simples (mas poderoso 💪) para **controlar o estoque da escola**:  
+- Professores o que precisam 📑  
+- Gestores aprovam ou rejeitam ✅❌  
+- O estoque se atualiza em tempo real ⚡  
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/178c9d00-257d-442c-a4fe-7bc9de681189) and start prompting.
+Tudo isso rodando direto no navegador, sem dor de cabeça.  
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## ✨ Funcionalidades legais
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- 📝 Criar pedidos públicos (sem precisar de login)  
+- 🔐 Área de **admin** protegida  
+- 📦 Controle de inventário e movimentações  
+- 📊 Dashboard com estatísticas de uso  
+- 📲 Links rápidos para e-mail e WhatsApp  
+- 🔄 Atualização em tempo real (thanks Supabase!)  
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🛠️ Feito com
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **React + Vite** → Frontend rápido que nem foguete 🚀  
+- **Supabase** → Banco de dados, auth e realtime 🟢  
+- **TailwindCSS** → Estilo prático e bonito ✨  
+- **Lucide Icons** → Ícones fofos e minimalistas 🎯  
+- Deploy na **Vercel** → um clique e já tá no ar 🌐  
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/178c9d00-257d-442c-a4fe-7bc9de681189) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+Se deu certo, ótimo.
+Se deu errado… provavelmente era só um ; faltando 😂

@@ -1,5 +1,6 @@
 import { useState, FormEvent } from "react";
 import { supabase } from "../lib/supabase";
+import Hero from "../components/Hero";
 
 type Status = "pendente" | "aceito" | "rejeitado";
 
@@ -73,89 +74,98 @@ export default function OrdersPublic() {
   }
 
   return (
-    <div className="container" style={{ padding: 16, maxWidth: 720 }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 className="ss-title">Fazer um pedido (público)</h1>
-      </header>
+    <>
+      {/* HERO enxuto */}
+      <Hero />
 
-      <form onSubmit={handleSubmit} className="ss-card" style={{ display: "grid", gap: 12, padding: 16, marginTop: 12 }}>
-        <div className="grid" style={{ gap: 12 }}>
-          <input
-            className="ss-input"
-            placeholder="Seu nome"
-            value={requesterName}
-            onChange={(e) => setRequesterName(e.target.value)}
-            required
-          />
-          <input
-            className="ss-input"
-            placeholder="Item"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            required
-          />
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      {/* Conteúdo da página */}
+      <div className="container" style={{ padding: 16, maxWidth: 720 }}>
+        {/* removido header duplicado */}
+
+        <form
+          id="form"
+          onSubmit={handleSubmit}
+          className="ss-card"
+          style={{ display: "grid", gap: 12, padding: 16, marginTop: 12 }}
+        >
+          <div className="grid" style={{ gap: 12 }}>
             <input
               className="ss-input"
-              type="number"
-              min={1}
-              placeholder="Quantidade"
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value) || 1)}
-              style={{ maxWidth: 160 }}
+              placeholder="Seu nome"
+              value={requesterName}
+              onChange={(e) => setRequesterName(e.target.value)}
               required
             />
             <input
               className="ss-input"
-              placeholder="Seu e-mail (para avisos) — opcional"
-              value={notifyEmail}
-              onChange={(e) => setNotifyEmail(e.target.value)}
+              placeholder="Item"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              required
             />
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <input
+                className="ss-input"
+                type="number"
+                min={1}
+                placeholder="Quantidade"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+                style={{ maxWidth: 160 }}
+                required
+              />
+              <input
+                className="ss-input"
+                placeholder="Seu e-mail (para avisos) — opcional"
+                value={notifyEmail}
+                onChange={(e) => setNotifyEmail(e.target.value)}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <input
+                className="ss-input"
+                placeholder="Seu WhatsApp com DDD (apenas números) — opcional"
+                value={notifyPhone}
+                onChange={(e) => setNotifyPhone(e.target.value)}
+              />
+              <input
+                className="ss-input"
+                placeholder="Observações (opcional)"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <input
-              className="ss-input"
-              placeholder="Seu WhatsApp com DDD (apenas números) — opcional"
-              value={notifyPhone}
-              onChange={(e) => setNotifyPhone(e.target.value)}
-            />
-            <input
-              className="ss-input"
-              placeholder="Observações (opcional)"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="ss-btn" type="submit" disabled={loading}>
+              {loading ? "Enviando…" : "Enviar pedido"}
+            </button>
+            <button
+              className="ss-btn ss-btn--subtle"
+              type="button"
+              onClick={() => {
+                setRequesterName("");
+                setItemName("");
+                setQuantity(1);
+                setNotes("");
+                setNotifyEmail("");
+                setNotifyPhone("");
+                setMsg(null);
+                setErr(null);
+              }}
+            >
+              Limpar
+            </button>
           </div>
-        </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="ss-btn" type="submit" disabled={loading}>
-            {loading ? "Enviando…" : "Enviar pedido"}
-          </button>
-          <button
-            className="ss-btn ss-btn--subtle"
-            type="button"
-            onClick={() => {
-              setRequesterName("");
-              setItemName("");
-              setQuantity(1);
-              setNotes("");
-              setNotifyEmail("");
-              setNotifyPhone("");
-              setMsg(null);
-              setErr(null);
-            }}
-          >
-            Limpar
-          </button>
-        </div>
-
-        {msg && <div className="ss-card ss-card--success">{msg}</div>}
-        {err && <div className="ss-card ss-card--danger">{err}</div>}
-        <small className="ss-dim">
-          Seu pedido inicia com status <strong>pendente</strong>.
-        </small>
-      </form>
-    </div>
+          {msg && <div className="ss-card ss-card--success">{msg}</div>}
+          {err && <div className="ss-card ss-card--danger">{err}</div>}
+          <small className="ss-dim">
+            Seu pedido inicia com status <strong>pendente</strong>.
+          </small>
+        </form>
+      </div>
+    </>
   );
 }
