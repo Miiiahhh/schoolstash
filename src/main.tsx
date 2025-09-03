@@ -1,12 +1,10 @@
 // src/main.tsx
+import "./styles/theme.css";  // <- caminho correto (pasta 'styles' minúscula)
+import "./index.css";
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-
-// CSS (ordem sugerida: tema primeiro = base; index.css depois = seus ajustes)
-import "./styles/theme.css";
-import "./index.css";
-
 import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
