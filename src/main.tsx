@@ -1,5 +1,5 @@
 // src/main.tsx
-import "./styles/theme.css";  // <- caminho correto (pasta 'styles' minúscula)
+import "./Styles/theme.css"; // <- corresponde à pasta 'Styles'
 import "./index.css";
 
 import React from "react";
