@@ -46,7 +46,7 @@ body {
 .brand-link { display: flex; align-items: center; text-decoration: none; }
 
 /* LOGO (altura controlada) */
-.brand-logo { height: 300px; width: auto; display: block; }
+.brand-logo { height: 36px; width: auto; display: block; }
 
 /* RESET: remove qualquer placeholder antigo (ex.: .brand-click) */
 .brand-left,
@@ -148,67 +148,3 @@ body {
 .hero-text { max-width: 760px; margin: 0 auto; text-align: center; }
 .hero-title { margin: 0 0 6px 0; font-size: clamp(26px, 3.5vw, 34px); line-height: 1.15; }
 .hero-subtitle { margin: 0; }
-/* micro-id discreto no card da lista pública */
-.ss-microid {
-  font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: var(--muted);
-  opacity: .9;
-}
-
-/* linha principal (solicitante • item) */
-.order-main {
-  color: var(--fg);
-  font-size: 15px;
-}
-/* Centro com scroll suave e sem barra visível */
-.center-wrap { display: flex; justify-content: center; }
-.center-scroll {
-  display: flex; gap: 6px;
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-  padding: 2px 4px; max-width: 100%;
-}
-.center-scroll::-webkit-scrollbar { display: none; } /* Chrome/Safari */
-
-/* Pílulas ligeiramente mais compactas em telas médias/pequenas */
-@media (max-width: 1100px) { .ss-pill { padding: 8px 10px; } }
-@media (max-width: 640px)  { .ss-pill { padding: 7px 9px;  font-size: 14px; } }
-
-.admin-menu { position: relative; }
-.admin-menu .ss-pill { display: inline-flex; align-items: center; }
-
-.admin-menu-pop {
-  position: absolute; top: calc(100% + 8px); left: 0; min-width: 220px;
-  border-radius: 14px; padding: 8px;
-  background: rgba(255,255,255,.08); border: var(--border); box-shadow: var(--shadow);
-  backdrop-filter: blur(10px) saturate(140%);
-}
-.admin-item {
-  display: block; padding: 10px 12px; border-radius: 10px; color: var(--fg); text-decoration: none;
-}
-.admin-item:hover { background: rgba(255,255,255,.06); }
-/* ================= LIGHT THEME (default) =================
-   Aplica quando NÃO estiver com data-theme="dark" no <html>
-*/
-html:not([data-theme="dark"]) {
-  --bg: #f5f7fb;            /* fundo da página */
-  --bg-card: #ffffff;       /* fundo dos cards */
-  --fg: #0b1020;            /* TEXTO PRINCIPAL (quase preto) */
-  --muted: #475569;         /* texto secundário (cinza escuro) */
-  --border: 1px solid rgba(2, 6, 23, 0.08);
-  --shadow: 0 6px 24px rgba(2, 6, 23, 0.06);
-}
-
-/* Garante cor correta nos cards/lista no modo claro */
-html:not([data-theme="dark"]) .ss-card,
-html:not([data-theme="dark"]) .order-main {
-  color: var(--fg);
-}
-
-html:not([data-theme="dark"]) .ss-dim {
-  color: var(--muted);
-}
-.skel { position:relative; overflow:hidden; background:rgba(255,255,255,.06); border-radius:12px; }
-.skel::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
-  transform:translateX(-100%); animation:shimmer 1.2s infinite; }
-@keyframes shimmer { to { transform:translateX(100%);} }

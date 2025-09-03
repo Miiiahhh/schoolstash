@@ -11,10 +11,6 @@ import AdminAdmins from "./pages/AdminAdmins";
 import AdminInventory from "./pages/AdminInventory";
 import AdminManage from "./pages/AdminManage";
 import Login from "./pages/Login";
-import AdminDashboard from "./pages/AdminDashboard";
-
-// Componentes
-import AdminMenu from "./components/AdminMenu";
 
 /* -------------------------
    Hooks locais
@@ -95,7 +91,7 @@ function useTheme() {
 }
 
 /* -------------------------
-   Nav (com AdminMenu)
+   Nav (logo real + centralizado)
 ------------------------- */
 function Nav() {
   const { theme, toggle } = useTheme();
@@ -118,7 +114,13 @@ function Nav() {
           <NavLink to="/" className="ss-pill">Fazer Pedido</NavLink>
           <NavLink to="/public" className="ss-pill">Pedidos (lista pública)</NavLink>
 
-          {!loading && isAdmin && <AdminMenu />}
+          {!loading && isAdmin && (
+            <>
+              <NavLink to="/admin" className="ss-pill">Admin • Pedidos</NavLink>
+              <NavLink to="/admin/inventory" className="ss-pill">Admin • Inventário</NavLink>
+              <NavLink to="/admin/admins" className="ss-pill">Gerenciar admins</NavLink>
+            </>
+          )}
         </div>
 
         {/* DIREITA – ações */}
@@ -172,14 +174,6 @@ export default function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Admin protegidas */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            <RequireAdmin>
-              <AdminDashboard />
-            </RequireAdmin>
-          }
-        />
         <Route
           path="/admin"
           element={
