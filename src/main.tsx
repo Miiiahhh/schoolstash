@@ -1,5 +1,5 @@
 // src/main.tsx
-import "./theme.css";  // <- arquivo existe na raiz de src, conforme seu print
+import "./theme.css";   // <- bate com a sua árvore atual (src/theme.css)
 import "./index.css";
 
 import React from "react";
